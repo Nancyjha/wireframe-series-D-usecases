@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMF Analytics — D Series (Workspace)</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --white:#ffffff;--bg:#f7f8fa;--border:#e4e7ec;--border-light:#f0f2f5;
+  --purple:#6d28d9;--purple-h:#5b21b6;--purple-light:#ede9fe;--purple-mid:#8b5cf6;
+  --text:#0f172a;--text-sec:#475569;--text-muted:#94a3b8;--text-link:#6d28d9;
+  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;
+  --amber:#b45309;--amber-bg:#fffbeb;--amber-border:#fde68a;
+  --green:#059669;--green-bg:#ecfdf5;--green-border:#6ee7b7;
+  --blue:#1d4ed8;--blue-bg:#eff6ff;--blue-border:#bfdbfe;
+  --orange:#c2410c;--orange-bg:#fff7ed;--orange-border:#fed7aa;
+  --teal:#0d9488;--teal-bg:#f0fdfa;--teal-border:#99f6e4;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font-family:inherit}
+
+/* PROTO NAV */
+#pnav{position:fixed;top:0;left:0;right:0;height:34px;background:#1e1b4b;z-index:9999;display:flex;align-items:center;padding:0 10px;gap:3px;overflow-x:auto;border-bottom:2px solid #312e81;flex-shrink:0}
+#pnav .lbl{font-size:10px;color:#818cf8;font-weight:700;letter-spacing:.08em;white-space:nowrap;margin-right:6px;flex-shrink:0}
+.pb{background:none;border:1px solid #3730a3;color:#a5b4fc;font-size:11px;padding:2px 9px;border-radius:3px;white-space:nowrap;flex-shrink:0;cursor:pointer;transition:all 100ms}
+.pb:hover{background:#312e81}.pb.on{background:#6d28d9;border-color:#6d28d9;color:#fff}
+.pdiv{width:1px;height:14px;background:#312e81;flex-shrink:0;margin:0 2px}
+
+/* SCREENS */
+.screen{display:none;padding-top:34px;min-height:100vh;flex-direction:column}.screen.on{display:flex}
+
+/* TOPNAV */
+.topnav{height:48px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;position:sticky;top:34px;z-index:100;flex-shrink:0}
+.tn-logo{width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--border);flex-shrink:0}
+.tn-logomark{width:26px;height:26px;background:var(--purple);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff}
+.tn-brand{padding:0 14px;font-size:13px;font-weight:700;color:var(--text);border-right:1px solid var(--border);height:48px;display:flex;align-items:center;flex-shrink:0}
+.tn-bc{display:flex;align-items:center;gap:5px;padding:0 14px;font-size:13px;color:var(--text-sec);flex:1;overflow:hidden;min-width:0}
+.tn-bc a{color:var(--text-link);cursor:pointer;white-space:nowrap;flex-shrink:0}.tn-bc a:hover{text-decoration:underline}
+.tn-bc .sep{color:var(--text-muted);font-size:12px}.tn-bc .cur{color:var(--text-sec);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tn-right{display:flex;align-items:center;height:48px;margin-left:auto;flex-shrink:0}
+.tn-btn{height:48px;padding:0 14px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-sec);border-left:1px solid var(--border);cursor:pointer;white-space:nowrap;transition:background 80ms}
+.tn-btn:hover{background:var(--bg)}
+.org-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-sec);background:var(--bg);border:1px solid var(--border);padding:3px 10px;border-radius:4px;cursor:pointer}
+
+/* SHELL */
+.shell{display:flex;flex:1;min-height:0;overflow:hidden}
+.sidebar{width:48px;background:var(--white);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:2px}
+.sib{width:34px;height:34px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;color:var(--text-muted);transition:all 80ms}
+.sib:hover{background:var(--purple-light);color:var(--purple)}.sib.on{background:var(--purple-light);color:var(--purple)}
+.main{flex:1;overflow-y:auto;min-width:0}
+.right-rail{width:40px;background:var(--white);border-left:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:3px}
+.rrb{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--text-muted);cursor:pointer}
+.rrb:hover{background:var(--purple-light);color:var(--purple)}
+
+/* WORKSPACE LAYOUT */
+.ws-wrap{display:flex;flex:1;min-height:0}
+
+/* FOLDER TREE (left panel) */
+.folder-panel{width:220px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:12px 0;overflow-y:auto}
+.fp-head{padding:0 14px 8px;display:flex;align-items:center;justify-content:space-between}
+.fp-title{font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.04em}
+.fp-add{width:20px;height:20px;background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:3px}
+.fp-add:hover{background:var(--bg);color:var(--purple)}
+.folder-item{display:flex;align-items:center;gap:7px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--text-sec);border-left:2px solid transparent;transition:all 80ms;user-select:none}
+.folder-item:hover{background:var(--bg);color:var(--text)}
+.folder-item.on{color:var(--purple);background:var(--purple-light);border-left-color:var(--purple);font-weight:500}
+.folder-item.sub{padding-left:30px;font-size:12px}
+.fi-icon{font-size:13px;flex-shrink:0;width:16px;text-align:center}
+.fi-count{font-size:10px;background:var(--bg);border:1px solid var(--border);color:var(--text-muted);padding:0 5px;border-radius:8px;margin-left:auto}
+.fp-divider{height:1px;background:var(--border-light);margin:6px 0}
+
+/* WORKSPACE CONTENT */
+.ws-content{flex:1;padding:20px 24px;overflow-y:auto}
+
+/* VIEW TABS */
+.view-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:0}
+.vtab{padding:8px 16px;font-size:13px;font-weight:500;color:var(--text-sec);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:inherit;transition:all 80ms;margin-bottom:-1px}
+.vtab:hover{color:var(--text)}.vtab.on{color:var(--purple);border-bottom-color:var(--purple)}
+.vtab-count{font-size:10px;background:var(--bg);border:1px solid var(--border);color:var(--text-muted);padding:0 5px;border-radius:8px;margin-left:5px;font-weight:400}
+
+/* WORKSPACE TOOLBAR */
+.ws-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ws-search{height:30px;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:0 10px 0 28px;font-size:13px;color:var(--text);outline:none;width:220px;font-family:inherit;transition:border-color 100ms;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:8px center}
+.ws-search:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(109,40,217,.08)}
+.ws-search::placeholder{color:var(--text-muted)}
+.ctrl-sel{height:28px;background:var(--white);border:1px solid var(--border);border-radius:4px;color:var(--text-sec);font-size:12px;padding:0 8px;outline:none;cursor:pointer}
+.ctrl-sel:focus{border-color:var(--purple)}
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.vt-btn{width:28px;height:28px;background:var(--white);border:none;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;border-right:1px solid var(--border);transition:all 80ms}
+.vt-btn:last-child{border-right:none}.vt-btn.on{background:var(--purple-light);color:var(--purple)}.vt-btn:hover{background:var(--bg)}
+
+/* ITEM CARDS — grid view */
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:16px}
+.item-card{background:var(--white);border:1px solid var(--border);border-radius:6px;padding:14px;cursor:pointer;transition:all 80ms;position:relative}
+.item-card:hover{border-color:var(--purple-mid);box-shadow:0 2px 8px rgba(109,40,217,.08)}
+.ic-type{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.ic-icon{font-size:16px}
+.ic-kind{font-size:11px;font-weight:600;color:var(--text-muted)}
+.ic-state{margin-left:auto}
+.ic-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.4}
+.ic-meta{font-size:11px;color:var(--text-muted);line-height:1.6}
+.ic-actions{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light)}
+.ic-lock{position:absolute;top:10px;right:10px;font-size:12px;color:var(--amber)}
+
+/* ITEM ROWS — list view */
+.item-list{background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px}
+.il-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border-light);cursor:pointer;transition:background 80ms}
+.il-row:last-child{border-bottom:none}
+.il-row:hover{background:#fafbfe}
+.il-icon{font-size:14px;flex-shrink:0;width:22px;text-align:center}
+.il-name{font-size:13px;font-weight:500;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.il-folder{font-size:11px;color:var(--text-muted);margin-right:4px}
+.il-meta{font-size:11px;color:var(--text-muted);flex-shrink:0;white-space:nowrap}
+.il-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:opacity 80ms}
+.il-row:hover .il-actions{opacity:1}
+
+/* STATE BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge.pub{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge.draft{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge.prot{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.badge.v2{background:var(--purple-light);color:var(--purple);border:1px solid #c4b5fd}
+.badge.neu{background:var(--bg);color:var(--text-muted);border:1px solid var(--border)}
+.badge.info{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-border)}
+.badge.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.badge.warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.badge.high{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border)}
+
+/* QUERY BUILDER LAYOUT */
+.qb-wrap{display:flex;height:calc(100vh - 82px);overflow:hidden}
+.qb-schema{width:220px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.qs-head{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.qs-title{font-size:12px;font-weight:600;color:var(--text-sec)}
+.qs-search{width:100%;margin-top:7px;height:27px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:0 8px;font-size:12px;color:var(--text);outline:none;font-family:inherit}
+.qs-search:focus{border-color:var(--purple)}
+.schema-table{margin:0}
+.st-header{display:flex;align-items:center;gap:6px;padding:8px 14px 5px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-sec);user-select:none}
+.st-header:hover{color:var(--text)}
+.st-arrow{font-size:10px;transition:transform 80ms;flex-shrink:0}
+.st-arrow.open{transform:rotate(90deg)}
+.st-icon{font-size:12px;width:14px;text-align:center}
+.st-cols{display:none;padding:0 0 6px}
+.st-cols.open{display:block}
+.col-row{display:flex;align-items:center;gap:6px;padding:3px 14px 3px 30px;font-size:11px;cursor:pointer;color:var(--text-muted);transition:color 80ms}
+.col-row:hover{color:var(--purple)}
+.col-type{font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:0 4px;color:var(--text-muted);flex-shrink:0;font-family:monospace}
+.col-name{font-family:monospace;flex:1}
+
+/* EDITOR AREA */
+.qb-editor{flex:1;display:flex;flex-direction:column;min-width:0}
+.qb-top{flex-shrink:0;border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.qb-name-inp{height:30px;background:var(--white);border:1px solid var(--border);border-radius:4px;padding:0 10px;font-size:13px;font-weight:500;color:var(--text);outline:none;font-family:inherit;width:240px;transition:border-color 100ms}
+.qb-name-inp:focus{border-color:var(--purple)}
+.qb-area{flex:0 0 200px;position:relative;border-bottom:1px solid var(--border)}
+.code-editor{width:100%;height:200px;background:#0f172a;color:#e2e8f0;font-family:'SFMono-Regular',Consolas,monospace;font-size:13px;line-height:1.6;padding:14px 16px;border:none;outline:none;resize:none;tab-size:2}
+.code-editor::placeholder{color:#334155}
+.line-nums{position:absolute;top:0;left:0;bottom:0;width:36px;background:#0f172a;border-right:1px solid #1e293b;padding:14px 0;display:flex;flex-direction:column;align-items:flex-end;gap:0;pointer-events:none}
+.ln{font-family:monospace;font-size:13px;color:#334155;padding:0 6px;line-height:1.6}
+/* Syntax highlight colours — applied via spans in the fake editor */
+.kw{color:#818cf8}  /* keywords */
+.fn{color:#34d399}  /* functions/tables */
+.cm{color:#475569}  /* comments */
+.st{color:#fbbf24}  /* strings */
+.nm{color:#fb923c}  /* numbers */
+
+/* RESULTS AREA */
+.qb-results{flex:1;display:flex;flex-direction:column;min-height:0}
+.qb-results-head{padding:8px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--white)}
+.results-table-wrap{flex:1;overflow:auto}
+.results-table{width:100%;border-collapse:collapse;font-size:12px}
+.results-table th{padding:7px 12px;text-align:left;background:var(--bg);border-bottom:1px solid var(--border);color:var(--text-sec);font-size:11px;white-space:nowrap;position:sticky;top:0}
+.results-table td{padding:7px 12px;border-bottom:1px solid var(--border-light);color:var(--text-sec);white-space:nowrap;font-family:monospace;font-size:12px}
+.results-table tr:last-child td{border-bottom:none}
+.results-table tr:hover td{background:#fafbfe}
+
+/* ERROR STATE */
+.query-error{background:#0f172a;border-top:1px solid var(--red-border);padding:10px 16px;font-family:monospace;font-size:12px;color:#f87171;line-height:1.6}
+
+/* RUNNING STATE */
+.running-overlay{position:absolute;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;z-index:10}
+.running-overlay .spin-ring{width:20px;height:20px;border-width:3px}
+.running-overlay span{font-size:12px;color:#e2e8f0}
+
+/* CHART BUILDER */
+.chart-builder{background:var(--white);border-left:1px solid var(--border);width:280px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.cb-head{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.cb-title{font-size:13px;font-weight:600;color:var(--text)}
+.cb-section{padding:12px 14px;border-bottom:1px solid var(--border-light)}
+.cb-label{font-size:11px;font-weight:600;color:var(--text-sec);margin-bottom:7px}
+.cb-opts{display:flex;gap:7px;flex-wrap:wrap}
+.chart-opt{width:56px;height:44px;border:1px solid var(--border);border-radius:4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;color:var(--text-muted);background:var(--white);transition:all 80ms;font-family:inherit}
+.chart-opt:hover{border-color:var(--purple-mid);color:var(--purple)}
+.chart-opt.on{border-color:var(--purple);background:var(--purple-light);color:var(--purple)}
+.chart-opt-icon{font-size:16px}
+.axis-sel{width:100%;height:28px;background:var(--white);border:1px solid var(--border);border-radius:4px;color:var(--text-sec);font-size:12px;padding:0 8px;outline:none;cursor:pointer;margin-bottom:7px}
+.axis-sel:focus{border-color:var(--purple)}
+.cb-preview{padding:12px 14px}
+.cb-preview-chart{background:var(--bg);border:1px solid var(--border);border-radius:4px;height:120px;display:flex;align-items:center;justify-content:center}
+
+/* PUBLISH FLOW */
+.publish-modal-body{padding:18px 20px}
+.pub-impact{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin:12px 0;font-size:12px}
+.pub-impact-row{display:flex;align-items:center;gap:8px;padding:4px 0;color:var(--text-sec)}
+.pub-impact-row span:first-child{font-size:14px;width:18px;text-align:center}
+
+/* IMPORT PANEL */
+.import-zone{border:2px dashed var(--border);border-radius:6px;padding:32px 24px;text-align:center;cursor:pointer;transition:all 100ms;margin-bottom:16px}
+.import-zone:hover{border-color:var(--purple-mid);background:var(--purple-light)}
+.import-zone.drag{border-color:var(--purple);background:var(--purple-light)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:4px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:inherit;transition:all 80ms;white-space:nowrap;line-height:1}
+.btn-p{background:var(--purple);color:#fff}.btn-p:hover{background:var(--purple-h)}
+.btn-s{background:var(--white);border:1px solid var(--border);color:var(--text-sec)}.btn-s:hover{border-color:var(--purple);color:var(--purple)}
+.btn-g{background:transparent;color:var(--text-sec);padding:6px 8px;border:none}.btn-g:hover{background:var(--bg);border-radius:3px}
+.btn-danger{background:var(--red);color:#fff}.btn-danger:hover{background:#b91c1c}
+.btn-sm{padding:4px 9px;font-size:11px}
+.btn-icon{width:26px;height:26px;padding:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+
+/* MODAL */
+.mbd{display:none;position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:500;align-items:center;justify-content:center;padding:20px}
+.mbd.on{display:flex}
+.modal{background:var(--white);border:1px solid var(--border);border-radius:8px;max-width:96vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.m-head{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:10}
+.m-title{font-size:15px;font-weight:600;color:var(--text)}.m-sub{font-size:12px;color:var(--text-muted);margin-top:2px}
+.m-close{width:26px;height:26px;background:none;border:none;color:var(--text-muted);font-size:17px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.m-close:hover{background:var(--bg);color:var(--text)}
+.m-body{padding:18px 20px}
+.m-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;bottom:0;background:var(--white)}
+
+/* FORM */
+.form-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.form-label{font-size:12px;font-weight:500;color:var(--text-sec)}
+.form-input,.form-select{height:34px;background:var(--white);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;padding:0 11px;font-family:inherit;outline:none;width:100%;transition:border-color 120ms}
+.form-input:focus,.form-select:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(109,40,217,.08)}
+.form-helper{font-size:11px;color:var(--text-muted);line-height:1.4}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:18px;right:18px;display:flex;flex-direction:column;gap:5px;z-index:9998}
+.toast{background:var(--white);border:1px solid var(--border);border-radius:5px;padding:9px 13px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px;min-width:220px;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.12);animation:tin 150ms ease-out}
+.toast.ok{border-left:3px solid var(--green)}.toast.warn{border-left:3px solid var(--amber)}.toast.info{border-left:3px solid var(--blue)}.toast.fail{border-left:3px solid var(--red)}
+@keyframes tin{from{transform:translateY(4px);opacity:0}to{opacity:1}}
+.t-x{color:var(--text-muted);cursor:pointer;margin-left:auto;flex-shrink:0}
+
+/* AI FAB */
+.ai-fab{position:fixed;bottom:22px;right:22px;width:42px;height:42px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(109,40,217,.38);font-size:17px;color:#fff;border:none;z-index:200;transition:all 120ms}
+.ai-fab:hover{background:var(--purple-h);transform:scale(1.06)}
+
+/* MISC */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-ring{width:9px;height:9px;border:2px solid rgba(109,40,217,.2);border-top-color:var(--purple);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;flex-shrink:0}
+.flex-r{display:flex;align-items:center;gap:8px}.ml-a{margin-left:auto}
+.mono{font-family:'SFMono-Regular',Consolas,monospace;font-size:12px}
+.td-muted{color:var(--text-muted)}.td-link{color:var(--text-link);cursor:pointer}
+.fb{border-radius:5px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;font-size:12px}
+.fb-icon{font-size:14px;flex-shrink:0;margin-top:1px}.fb-body{flex:1}.fb-title{font-weight:600;margin-bottom:2px}.fb-desc{color:var(--text-sec);line-height:1.5}
+.fb.info{background:var(--blue-bg);border:1px solid var(--blue-border)}.fb.info .fb-icon,.fb.info .fb-title{color:var(--blue)}
+.fb.warn{background:var(--amber-bg);border:1px solid var(--amber-border)}.fb.warn .fb-icon,.fb.warn .fb-title{color:var(--amber)}
+.fb.ok{background:var(--green-bg);border:1px solid var(--green-border)}.fb.ok .fb-icon,.fb.ok .fb-title{color:var(--green)}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="pnav">
+  <span class="lbl">D Series — Workspace</span>
+  <button class="pb on"  onclick="go('d1')">1 · Workspace list</button>
+  <div class="pdiv"></div>
+  <button class="pb" onclick="go('d2')">2 · Query builder (writing)</button>
+  <button class="pb" onclick="go('d3')">3 · Query builder (results)</button>
+  <button class="pb" onclick="go('d4')">4 · Query builder (error state)</button>
+  <div class="pdiv"></div>
+  <button class="pb" onclick="go('d5')">5 · Save as report (chart builder)</button>
+  <div class="pdiv"></div>
+  <button class="pb" onclick="go('d6')">6 · Publish flow</button>
+  <div class="pdiv"></div>
+  <button class="pb" onclick="go('d7')">7 · Import package</button>
+  <div class="pdiv"></div>
+  <button class="pb" onclick="go('d8')">8 · Empty state (first open)</button>
+  <div class="pdiv"></div>
+  <button class="pb" onclick="go('d9')">9 · AI create report (V2 stub)</button>
+</div>
+<div class="toast-wrap" id="toasts"></div>
+
+<!-- ════ SHARED SIDEBAR ════ -->
+<template id="tmpl-sidebar">
+  <div class="sib" onclick="toast('B Series — Dashboard','info')">⊞</div>
+  <div class="sib" onclick="toast('B Series — Findings','info')">⚑</div>
+  <div class="sib" onclick="toast('B Series — CPU','info')">◫</div>
+  <div class="sib" onclick="toast('B Series — Jobs','info')">◻</div>
+  <div class="sib" onclick="toast('B Series — DB2','info')">◈</div>
+  <div class="sib" onclick="toast('C Series — Capacity','info')" style="font-size:13px">▣</div>
+  <div class="sib on" title="Workspace">⊡</div>
+  <div class="sib" style="margin-top:auto" onclick="toast('Settings','info')">⚙</div>
+  <div class="sib">👤</div>
+</template>
+
+<!-- ════════════════════════════════════════════════════
+  D1 — WORKSPACE LIST
+  What it shows: All queries and reports belonging to
+  this organisation, organised into folders. Toggle
+  between grid and list view. Maintec's pre-built
+  package is in its own folder. User's own work in
+  another. Published vs Draft state visible at a glance.
+════════════════════════════════════════════════════ -->
+<div class="screen on" id="d1">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><span class="cur">Workspace</span></div>
+    <div class="tn-right">
+      <div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div>
+      <div class="tn-btn">?</div>
+    </div>
+  </nav>
+  <div class="shell">
+    <aside class="sidebar" id="sb-d1"></aside>
+    <main class="main">
+      <div class="ws-wrap">
+
+        <!-- FOLDER PANEL -->
+        <div class="folder-panel">
+          <div class="fp-head">
+            <span class="fp-title">FOLDERS</span>
+            <button class="fp-add" onclick="openModal('m-new-folder')" title="New folder">+</button>
+          </div>
+
+          <div class="folder-item on" onclick="filterFolder('all')">
+            <span class="fi-icon">⊡</span> All items
+            <span class="fi-count">14</span>
+          </div>
+          <div class="folder-item" onclick="filterFolder('queries')">
+            <span class="fi-icon">⌨</span> All queries
+            <span class="fi-count">6</span>
+          </div>
+          <div class="folder-item" onclick="filterFolder('reports')">
+            <span class="fi-icon">◫</span> All reports
+            <span class="fi-count">8</span>
+          </div>
+
+          <div class="fp-divider"></div>
+
+          <!-- MAINTEC PACKAGE FOLDER -->
+          <div class="folder-item" onclick="filterFolder('maintec')" style="font-weight:500">
+            <span class="fi-icon">📦</span> Maintec — Standard
+            <span class="fi-count">9</span>
+          </div>
+          <div class="folder-item sub" onclick="filterFolder('maintec-cpu')">
+            <span class="fi-icon">◫</span> CPU &amp; Capacity
+            <span class="fi-count">4</span>
+          </div>
+          <div class="folder-item sub" onclick="filterFolder('maintec-db2')">
+            <span class="fi-icon">◈</span> DB2 Performance
+            <span class="fi-count">3</span>
+          </div>
+          <div class="folder-item sub" onclick="filterFolder('maintec-job')">
+            <span class="fi-icon">◻</span> Job Activity
+            <span class="fi-count">2</span>
+          </div>
+
+          <div class="fp-divider"></div>
+
+          <!-- USER FOLDERS -->
+          <div class="folder-item" onclick="filterFolder('my-work')" style="font-weight:500">
+            <span class="fi-icon">📁</span> My work
+            <span class="fi-count">4</span>
+          </div>
+          <div class="folder-item sub" onclick="filterFolder('my-payroll')">
+            <span class="fi-icon">📂</span> PAYROLL investigation
+            <span class="fi-count">3</span>
+          </div>
+          <div class="folder-item sub" onclick="filterFolder('my-q4')">
+            <span class="fi-icon">📂</span> Q4 capacity review
+            <span class="fi-count">1</span>
+          </div>
+
+          <div class="fp-divider"></div>
+          <div class="folder-item" onclick="openModal('m-import')" style="color:var(--text-link)">
+            <span class="fi-icon">⬆</span> Import package…
+          </div>
+        </div>
+
+        <!-- CONTENT AREA -->
+        <div class="ws-content">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap">
+            <div>
+              <div style="font-size:21px;font-weight:600;color:var(--text);letter-spacing:-.3px">Workspace</div>
+              <div style="font-size:13px;color:var(--text-sec)">All queries and reports · 14 items</div>
+            </div>
+            <div class="flex-r">
+              <button class="btn btn-s" onclick="openModal('m-import')">⬆ Import</button>
+              <button class="btn btn-p" onclick="go('d2')">+ New query</button>
+            </div>
+          </div>
+
+          <!-- TABS -->
+          <div class="view-tabs">
+            <button class="vtab on">All <span class="vtab-count">14</span></button>
+            <button class="vtab">Queries <span class="vtab-count">6</span></button>
+            <button class="vtab">Reports <span class="vtab-count">8</span></button>
+          </div>
+
+          <!-- TOOLBAR -->
+          <div class="ws-toolbar">
+            <input class="ws-search" placeholder="Search by name or folder…">
+            <select class="ctrl-sel"><option>Sort: Modified</option><option>Sort: Name</option><option>Sort: Created</option></select>
+            <select class="ctrl-sel"><option>All states</option><option>Published</option><option>Draft</option></select>
+            <div class="ml-a">
+              <div class="view-toggle">
+                <button class="vt-btn on" title="Grid">⊞</button>
+                <button class="vt-btn" title="List">☰</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MAINTEC SECTION -->
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.04em;margin-bottom:8px">MAINTEC — STANDARD REPORTS</div>
+          <div class="item-grid" style="margin-bottom:20px">
+
+            <div class="item-card" onclick="toast('Opening report: 30-day CPU trend','info')">
+              <div class="ic-type">
+                <span class="ic-icon">◫</span>
+                <span class="ic-kind">REPORT</span>
+                <span class="ic-state"><span class="badge pub">Published</span></span>
+              </div>
+              <div class="ic-name">30-day CPU utilisation trend</div>
+              <div class="ic-meta">CPU &amp; Capacity · by Maintec · modified never<br>MIPS and MSU · all LPARs · line chart</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation();toast('Opening report','info')">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Duplicated as draft','ok')">Duplicate</button>
+              </div>
+              <span class="ic-lock" title="Protected — cannot be edited">🔒</span>
+            </div>
+
+            <div class="item-card" onclick="toast('Opening: LPAR summary','info')">
+              <div class="ic-type">
+                <span class="ic-icon">◫</span>
+                <span class="ic-kind">REPORT</span>
+                <span class="ic-state"><span class="badge pub">Published</span></span>
+              </div>
+              <div class="ic-name">LPAR capacity summary</div>
+              <div class="ic-meta">CPU &amp; Capacity · by Maintec<br>All LPARs · peak / avg / entitled · table</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation();toast('Opening','info')">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Duplicated','ok')">Duplicate</button>
+              </div>
+              <span class="ic-lock">🔒</span>
+            </div>
+
+            <div class="item-card" onclick="toast('Opening: DB2 buffer pool hit ratio','info')">
+              <div class="ic-type">
+                <span class="ic-icon">◫</span>
+                <span class="ic-kind">REPORT</span>
+                <span class="ic-state"><span class="badge pub">Published</span></span>
+              </div>
+              <div class="ic-name">DB2 buffer pool hit ratio — 30 days</div>
+              <div class="ic-meta">DB2 Performance · by Maintec<br>SMF 101 · BP0 and BP1 · line chart</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation()">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Duplicated','ok')">Duplicate</button>
+              </div>
+              <span class="ic-lock">🔒</span>
+            </div>
+
+            <div class="item-card" onclick="toast('Opening: top abending jobs','info')">
+              <div class="ic-type">
+                <span class="ic-icon">◫</span>
+                <span class="ic-kind">REPORT</span>
+                <span class="ic-state"><span class="badge pub">Published</span></span>
+              </div>
+              <div class="ic-name">Top abending jobs — 30-day trend</div>
+              <div class="ic-meta">Job Activity · by Maintec<br>SMF 30 · abend count by job name · bar</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation()">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Duplicated','ok')">Duplicate</button>
+              </div>
+              <span class="ic-lock">🔒</span>
+            </div>
+
+          </div>
+
+          <!-- USER WORK -->
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.04em;margin-bottom:8px">MY WORK</div>
+          <div class="item-grid">
+
+            <div class="item-card" onclick="go('d3')">
+              <div class="ic-type">
+                <span class="ic-icon">⌨</span>
+                <span class="ic-kind">QUERY</span>
+                <span class="ic-state"><span class="badge prot">Protected</span></span>
+              </div>
+              <div class="ic-name">PAYROLL CPU by step · last 10 runs</div>
+              <div class="ic-meta">PAYROLL investigation · by Sarah Chen<br>Modified 24 Sep · SMF 30 + 70 join</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation();go('d3')">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();go('d5')">Save as report</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();toast('Duplicated','ok')">Dup</button>
+              </div>
+            </div>
+
+            <div class="item-card" onclick="toast('Opening query: daily cost by job class','info')">
+              <div class="ic-type">
+                <span class="ic-icon">⌨</span>
+                <span class="ic-kind">QUERY</span>
+                <span class="ic-state"><span class="badge neu">Unprotected</span></span>
+              </div>
+              <div class="ic-name">Daily cost by job class — rolling 30d</div>
+              <div class="ic-meta">PAYROLL investigation · by Sarah Chen<br>Modified 23 Sep · SMF 30</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation()">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();go('d5')">Save as report</button>
+              </div>
+            </div>
+
+            <div class="item-card" onclick="toast('Opening draft report','info')">
+              <div class="ic-type">
+                <span class="ic-icon">◫</span>
+                <span class="ic-kind">REPORT</span>
+                <span class="ic-state"><span class="badge draft">Draft</span></span>
+              </div>
+              <div class="ic-name">PAYROLL CPU share — weekly bar chart</div>
+              <div class="ic-meta">PAYROLL investigation · by Sarah Chen<br>Created 24 Sep · not yet published</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation()">Edit</button>
+                <button class="btn btn-p btn-sm" onclick="event.stopPropagation();go('d6')">Publish</button>
+              </div>
+            </div>
+
+            <div class="item-card" onclick="go('d2')">
+              <div class="ic-type">
+                <span class="ic-icon">⌨</span>
+                <span class="ic-kind">QUERY</span>
+                <span class="ic-state"><span class="badge neu">Unprotected</span></span>
+              </div>
+              <div class="ic-name">Q4 capacity headroom — MIPS by week</div>
+              <div class="ic-meta">Q4 capacity review · by Sarah Chen<br>Modified 22 Sep · SMF 70</div>
+              <div class="ic-actions">
+                <button class="btn btn-s btn-sm" onclick="event.stopPropagation();go('d2')">Open</button>
+                <button class="btn btn-g btn-sm" onclick="event.stopPropagation();go('d5')">Save as report</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="right-rail"><div class="rrb">ℹ</div><div class="rrb">⧩</div></div>
+  </div>
+  <button class="ai-fab" onclick="toast('AI: Ask me to write a query, or describe a report you want to see','info')">✦</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D2 — QUERY BUILDER (writing state)
+  Left: schema browser with SMF domain table names
+  and columns — click to insert at cursor.
+  Centre: dark code editor, SQL being written.
+  Right: chart builder collapsed (no results yet).
+  Top bar: query name, datasource/LPAR scope, Run.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d2">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><span class="cur">PAYROLL CPU by step · last 10 runs</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell" style="overflow:hidden">
+    <aside class="sidebar" id="sb-d2"></aside>
+    <main class="main" style="overflow:hidden;display:flex;flex-direction:column">
+
+      <!-- QUERY TOP BAR -->
+      <div class="qb-top">
+        <input class="qb-name-inp" value="PAYROLL CPU by step · last 10 runs">
+        <select class="ctrl-sel"><option>PROD1</option><option>PROD2</option><option>All LPARs</option></select>
+        <select class="ctrl-sel"><option>Last 10 runs</option><option>Last 30 runs</option><option>Date range…</option></select>
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-sec)">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+            <input type="checkbox" checked style="accent-color:var(--purple)">Protected
+          </label>
+        </div>
+        <div class="ml-a flex-r">
+          <button class="btn btn-g btn-sm" onclick="toast('Query saved','ok')">Save</button>
+          <button class="btn btn-p" onclick="go('d3')">▶ Run</button>
+        </div>
+      </div>
+
+      <div class="qb-wrap">
+        <!-- SCHEMA BROWSER -->
+        <div class="qb-schema">
+          <div class="qs-head">
+            <div class="qs-title">Schema — SMF tables</div>
+            <input class="qs-search" placeholder="Filter tables…">
+          </div>
+
+          <!-- smf_cpu -->
+          <div class="schema-table">
+            <div class="st-header" onclick="toggleSchema('sc-cpu')">
+              <span class="st-arrow open" id="arr-cpu">›</span>
+              <span class="st-icon">◫</span>
+              <span style="font-family:monospace">smf_cpu</span>
+              <span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 70</span>
+            </div>
+            <div class="st-cols open" id="sc-cpu">
+              <div class="col-row" onclick="insertCol('run_date')"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row" onclick="insertCol('lpar')"><span class="col-name">lpar</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row" onclick="insertCol('interval_start')"><span class="col-name">interval_start</span><span class="col-type">TIMESTAMP</span></div>
+              <div class="col-row" onclick="insertCol('cpu_type')"><span class="col-name">cpu_type</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row" onclick="insertCol('dispatch_mips')"><span class="col-name">dispatch_mips</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('idle_mips')"><span class="col-name">idle_mips</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('wait_mips')"><span class="col-name">wait_mips</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('entitled_msu')"><span class="col-name">entitled_msu</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('util_pct')"><span class="col-name">util_pct</span><span class="col-type">DECIMAL</span></div>
+            </div>
+          </div>
+
+          <!-- smf_jobs -->
+          <div class="schema-table">
+            <div class="st-header" onclick="toggleSchema('sc-jobs')">
+              <span class="st-arrow open" id="arr-jobs">›</span>
+              <span class="st-icon">◻</span>
+              <span style="font-family:monospace">smf_jobs</span>
+              <span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 30</span>
+            </div>
+            <div class="st-cols open" id="sc-jobs">
+              <div class="col-row" onclick="insertCol('run_date')"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row" onclick="insertCol('job_name')"><span class="col-name">job_name</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row" onclick="insertCol('step_name')"><span class="col-name">step_name</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row" onclick="insertCol('cpu_seconds')"><span class="col-name">cpu_seconds</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('elapsed_seconds')"><span class="col-name">elapsed_seconds</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('completion_code')"><span class="col-name">completion_code</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row" onclick="insertCol('est_cost')"><span class="col-name">est_cost</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row" onclick="insertCol('job_class')"><span class="col-name">job_class</span><span class="col-type">CHAR(1)</span></div>
+            </div>
+          </div>
+
+          <!-- smf_wlm -->
+          <div class="schema-table">
+            <div class="st-header" onclick="toggleSchema('sc-wlm')">
+              <span class="st-arrow" id="arr-wlm">›</span>
+              <span class="st-icon">⌇</span>
+              <span style="font-family:monospace">smf_wlm</span>
+              <span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 72</span>
+            </div>
+            <div class="st-cols" id="sc-wlm">
+              <div class="col-row"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row"><span class="col-name">service_class</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">msu</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row"><span class="col-name">transactions</span><span class="col-type">INTEGER</span></div>
+              <div class="col-row"><span class="col-name">avg_response_ms</span><span class="col-type">DECIMAL</span></div>
+            </div>
+          </div>
+
+          <!-- smf_db2_accounting -->
+          <div class="schema-table">
+            <div class="st-header" onclick="toggleSchema('sc-db2a')">
+              <span class="st-arrow" id="arr-db2a">›</span>
+              <span class="st-icon">◈</span>
+              <span style="font-family:monospace">smf_db2_acctg</span>
+              <span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 100</span>
+            </div>
+            <div class="st-cols" id="sc-db2a">
+              <div class="col-row"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row"><span class="col-name">plan_name</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">auth_id</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">cpu_mips</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row"><span class="col-name">fetches</span><span class="col-type">BIGINT</span></div>
+              <div class="col-row"><span class="col-name">deadlocks</span><span class="col-type">INTEGER</span></div>
+              <div class="col-row"><span class="col-name">lock_wait_s</span><span class="col-type">DECIMAL</span></div>
+            </div>
+          </div>
+
+          <!-- smf_db2_bp -->
+          <div class="schema-table">
+            <div class="st-header" onclick="toggleSchema('sc-db2b')">
+              <span class="st-arrow" id="arr-db2b">›</span>
+              <span class="st-icon">◈</span>
+              <span style="font-family:monospace">smf_db2_bp</span>
+              <span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 101</span>
+            </div>
+            <div class="st-cols" id="sc-db2b">
+              <div class="col-row"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row"><span class="col-name">bp_name</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">hit_ratio_pct</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row"><span class="col-name">getpage</span><span class="col-type">BIGINT</span></div>
+              <div class="col-row"><span class="col-name">read_ios</span><span class="col-type">BIGINT</span></div>
+              <div class="col-row"><span class="col-name">seq_prefetch</span><span class="col-type">BIGINT</span></div>
+            </div>
+          </div>
+
+          <div style="padding:8px 14px;font-size:11px;color:var(--text-muted);line-height:1.5;border-top:1px solid var(--border-light);margin-top:8px">
+            Tables show SMF domain names. The underlying DB (DB2 or PostgreSQL) is handled by the server — write ANSI SQL.
+          </div>
+        </div>
+
+        <!-- EDITOR -->
+        <div class="qb-editor">
+          <!-- CODE EDITOR -->
+          <div class="qb-area">
+            <div class="line-nums" id="line-nums">
+              <span class="ln">1</span><span class="ln">2</span><span class="ln">3</span>
+              <span class="ln">4</span><span class="ln">5</span><span class="ln">6</span>
+              <span class="ln">7</span><span class="ln">8</span><span class="ln">9</span>
+              <span class="ln">10</span><span class="ln">11</span><span class="ln">12</span>
+            </div>
+            <textarea class="code-editor" id="code-area" style="padding-left:50px" spellcheck="false">SELECT
+  j.run_date,
+  j.job_name,
+  j.step_name,
+  SUM(j.cpu_seconds)          AS total_cpu_s,
+  MAX(j.est_cost)             AS est_cost,
+  j.completion_code
+FROM smf_jobs j
+WHERE j.job_name LIKE 'PAYROLL%'
+  AND j.run_date >= CURRENT_DATE - 10
+GROUP BY j.run_date, j.job_name,
+         j.step_name, j.completion_code
+ORDER BY j.run_date DESC, total_cpu_s DESC</textarea>
+          </div>
+
+          <!-- RESULTS placeholder when no run yet -->
+          <div class="qb-results">
+            <div class="qb-results-head">
+              <span style="font-size:12px;color:var(--text-muted)">No results yet — click Run to execute</span>
+              <div class="ml-a flex-r">
+                <button class="btn btn-g btn-sm" onclick="toast('Keyboard shortcut: Ctrl+Enter / Cmd+Enter','info')">⌨ Ctrl+Enter to run</button>
+              </div>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text-muted)">
+              <span style="font-size:32px;opacity:.2">▶</span>
+              <span style="font-size:13px">Run the query to see results here</span>
+              <span style="font-size:11px">Results are scoped to PROD1 · last 10 runs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D3 — QUERY BUILDER (results state)
+  Same layout. Query has run — results table appears
+  below. Row count, duration, export to CSV.
+  "Save as report" button becomes available.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d3">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><span class="cur">PAYROLL CPU by step · last 10 runs</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell" style="overflow:hidden">
+    <aside class="sidebar" id="sb-d3"></aside>
+    <main class="main" style="overflow:hidden;display:flex;flex-direction:column">
+      <div class="qb-top">
+        <input class="qb-name-inp" value="PAYROLL CPU by step · last 10 runs">
+        <select class="ctrl-sel"><option>PROD1</option><option>PROD2</option><option>All LPARs</option></select>
+        <select class="ctrl-sel"><option>Last 10 runs</option><option>Last 30 runs</option></select>
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-sec)">
+          <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" checked style="accent-color:var(--purple)">Protected</label>
+        </div>
+        <div class="ml-a flex-r">
+          <button class="btn btn-g btn-sm" onclick="toast('Saved','ok')">Save</button>
+          <button class="btn btn-s" onclick="go('d2')">▶ Re-run</button>
+          <button class="btn btn-p" onclick="go('d5')">Save as report →</button>
+        </div>
+      </div>
+
+      <div class="qb-wrap">
+        <div class="qb-schema">
+          <div class="qs-head">
+            <div class="qs-title">Schema — SMF tables</div>
+            <input class="qs-search" placeholder="Filter tables…">
+          </div>
+          <div class="schema-table">
+            <div class="st-header"><span class="st-arrow open">›</span><span class="st-icon">◻</span><span style="font-family:monospace">smf_jobs</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 30</span></div>
+            <div class="st-cols open">
+              <div class="col-row"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row"><span class="col-name">job_name</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">step_name</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">cpu_seconds</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row"><span class="col-name">est_cost</span><span class="col-type">DECIMAL</span></div>
+              <div class="col-row"><span class="col-name">completion_code</span><span class="col-type">VARCHAR</span></div>
+            </div>
+          </div>
+          <div class="schema-table">
+            <div class="st-header"><span class="st-arrow">›</span><span class="st-icon">◫</span><span style="font-family:monospace">smf_cpu</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 70</span></div>
+          </div>
+        </div>
+
+        <div class="qb-editor">
+          <div class="qb-area" style="flex:0 0 160px">
+            <div class="line-nums">
+              <span class="ln">1</span><span class="ln">2</span><span class="ln">3</span><span class="ln">4</span>
+              <span class="ln">5</span><span class="ln">6</span><span class="ln">7</span><span class="ln">8</span>
+              <span class="ln">9</span><span class="ln">10</span><span class="ln">11</span><span class="ln">12</span>
+            </div>
+            <textarea class="code-editor" style="padding-left:50px;height:160px" spellcheck="false">SELECT
+  j.run_date,
+  j.job_name,
+  j.step_name,
+  SUM(j.cpu_seconds)   AS total_cpu_s,
+  MAX(j.est_cost)      AS est_cost,
+  j.completion_code
+FROM smf_jobs j
+WHERE j.job_name LIKE 'PAYROLL%'
+  AND j.run_date >= CURRENT_DATE - 10
+GROUP BY j.run_date, j.job_name, j.step_name, j.completion_code
+ORDER BY j.run_date DESC, total_cpu_s DESC</textarea>
+          </div>
+
+          <!-- RESULTS -->
+          <div class="qb-results">
+            <div class="qb-results-head">
+              <span style="color:var(--green);font-weight:500;font-size:12px">✓ 47 rows</span>
+              <span style="font-size:12px;color:var(--text-muted)">· completed in 0.8s · PROD1 · last 10 runs</span>
+              <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);margin-left:auto">
+                <span>Rows truncated at 1,000</span>
+                <button class="btn btn-s btn-sm" onclick="toast('CSV downloaded — 47 rows','ok')">⬇ CSV</button>
+                <button class="btn btn-p btn-sm" onclick="go('d5')">Save as report →</button>
+              </div>
+            </div>
+            <div class="results-table-wrap">
+              <table class="results-table">
+                <thead>
+                  <tr>
+                    <th>run_date</th>
+                    <th>job_name</th>
+                    <th>step_name</th>
+                    <th>total_cpu_s</th>
+                    <th>est_cost</th>
+                    <th>completion_code</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="background:rgba(220,38,38,.04)">
+                    <td>2026-09-24</td><td>PAYROLL01</td><td>STEP030</td>
+                    <td style="color:#dc2626;font-weight:600">18,240</td>
+                    <td style="color:#dc2626">$73.08</td>
+                    <td style="color:#dc2626;font-weight:600">S0C4</td>
+                  </tr>
+                  <tr style="background:rgba(220,38,38,.04)">
+                    <td>2026-09-24</td><td>PAYROLL02</td><td>STEP030</td>
+                    <td style="color:#dc2626;font-weight:600">14,100</td><td style="color:#dc2626">$56.52</td><td style="color:#dc2626;font-weight:600">S0C4</td>
+                  </tr>
+                  <tr>
+                    <td>2026-09-24</td><td>PAYROLL01</td><td>STEP010</td>
+                    <td>0</td><td>$0.00</td><td style="color:#059669">RC 0</td>
+                  </tr>
+                  <tr>
+                    <td>2026-09-24</td><td>PAYROLL01</td><td>STEP020</td>
+                    <td>42</td><td>$0.17</td><td style="color:#059669">RC 0</td>
+                  </tr>
+                  <tr>
+                    <td>2026-09-23</td><td>PAYROLL01</td><td>STEP030</td>
+                    <td>9,812</td><td>$39.25</td><td style="color:#059669">RC 0</td>
+                  </tr>
+                  <tr>
+                    <td>2026-09-23</td><td>PAYROLL02</td><td>STEP030</td>
+                    <td>9,640</td><td>$38.56</td><td style="color:#059669">RC 0</td>
+                  </tr>
+                  <tr style="color:var(--text-muted)">
+                    <td colspan="6" style="text-align:center;padding:8px;font-style:italic">41 more rows…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D4 — QUERY BUILDER (error state)
+  Query ran but the SQL had an error.
+  Error shown inline below the editor with the exact
+  DB message (sanitised — no "DB2" or "PostgreSQL").
+  Position highlighted, suggestion offered.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d4">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><span class="cur">Untitled query</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell" style="overflow:hidden">
+    <aside class="sidebar" id="sb-d4"></aside>
+    <main class="main" style="overflow:hidden;display:flex;flex-direction:column">
+      <div class="qb-top">
+        <input class="qb-name-inp" value="Untitled query" style="color:var(--text-muted)">
+        <select class="ctrl-sel"><option>PROD1</option></select>
+        <select class="ctrl-sel"><option>Last 10 runs</option></select>
+        <div class="ml-a flex-r">
+          <button class="btn btn-g btn-sm">Save</button>
+          <button class="btn btn-p" onclick="go('d3')">▶ Re-run</button>
+        </div>
+      </div>
+      <div class="qb-wrap">
+        <div class="qb-schema">
+          <div class="qs-head"><div class="qs-title">Schema — SMF tables</div></div>
+          <div class="schema-table">
+            <div class="st-header"><span class="st-arrow open">›</span><span class="st-icon">◫</span><span style="font-family:monospace">smf_cpu</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">SMF 70</span></div>
+            <div class="st-cols open">
+              <div class="col-row"><span class="col-name">run_date</span><span class="col-type">DATE</span></div>
+              <div class="col-row"><span class="col-name">lpar</span><span class="col-type">VARCHAR</span></div>
+              <div class="col-row"><span class="col-name">dispatch_mips</span><span class="col-type">DECIMAL</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="qb-editor">
+          <!-- editor with bad line highlighted -->
+          <div class="qb-area" style="flex:0 0 140px">
+            <div class="line-nums">
+              <span class="ln">1</span><span class="ln">2</span><span class="ln">3</span>
+              <span class="ln">4</span><span class="ln" style="color:#f87171;font-weight:600">5</span>
+              <span class="ln">6</span>
+            </div>
+            <textarea class="code-editor" style="padding-left:50px;height:140px" spellcheck="false">SELECT
+  run_date,
+  lpar,
+  dispatch_mips,
+  unknwon_column
+FROM smf_cpu
+</textarea>
+          </div>
+          <!-- ERROR STATE -->
+          <div class="query-error">
+            <div style="color:#fca5a5;font-weight:600;margin-bottom:4px">✗ Query error — line 5</div>
+            <div>Column "unknwon_column" does not exist in smf_cpu.</div>
+            <div style="margin-top:4px;color:#94a3b8">Did you mean: <span style="color:#818cf8;cursor:pointer" onclick="toast('Inserted: util_pct','ok')">util_pct</span> · <span style="color:#818cf8;cursor:pointer" onclick="toast('Inserted: dispatch_mips','ok')">dispatch_mips</span> · <span style="color:#818cf8;cursor:pointer" onclick="toast('Inserted: entitled_msu','ok')">entitled_msu</span></div>
+            <div style="margin-top:8px;color:#64748b;font-size:11px">The database returned this error. Check the schema browser on the left for valid column names. No charge is incurred for failed queries.</div>
+          </div>
+          <div class="qb-results">
+            <div class="qb-results-head">
+              <span style="color:var(--red);font-weight:500;font-size:12px">✗ Query failed — 0 rows returned</span>
+            </div>
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:var(--text-muted)">
+              <span style="font-size:24px;opacity:.2">✗</span>
+              <span style="font-size:12px">Fix the error above and re-run</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D5 — SAVE AS REPORT (chart builder)
+  Comes from query results. Results are in memory —
+  no re-run needed. User picks chart type, maps
+  columns to axes, sets title. Preview updates live.
+  Save creates a Draft report in the workspace.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d5">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><a onclick="go('d3')">PAYROLL CPU by step</a><span class="sep">›</span><span class="cur">Save as report</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell" style="overflow:hidden">
+    <aside class="sidebar" id="sb-d5"></aside>
+    <main class="main" style="overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--white)">
+        <div style="font-size:13px;color:var(--text-muted)">From query: <strong style="color:var(--text)">PAYROLL CPU by step · last 10 runs</strong> · 47 rows in memory</div>
+        <div class="ml-a flex-r">
+          <button class="btn btn-g" onclick="go('d3')">← Back to query</button>
+          <button class="btn btn-p" onclick="openModal('m-save-report')">Save as Draft →</button>
+        </div>
+      </div>
+
+      <div class="qb-wrap">
+        <!-- RESULTS preview (reduced) -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--border)">
+          <!-- CHART PREVIEW -->
+          <div style="padding:16px;flex:1;display:flex;flex-direction:column">
+            <div style="font-size:12px;font-weight:600;color:var(--text-sec);margin-bottom:10px">Chart preview</div>
+            <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;flex:1;display:flex;flex-direction:column;overflow:hidden">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--border-light)">
+                <div style="font-size:14px;font-weight:600;color:var(--text)">PAYROLL CPU seconds by step — last 10 runs</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Source: smf_jobs · PROD1 · 15 Sep – 24 Sep 2026</div>
+              </div>
+              <div style="flex:1;padding:12px 16px">
+                <svg width="100%" height="200" id="report-preview-chart"></svg>
+              </div>
+              <div style="padding:8px 16px;border-top:1px solid var(--border-light);display:flex;gap:12px">
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:2px;background:#dc2626"></div>S0C4 (abend)</div>
+                <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)"><div style="width:10px;height:10px;border-radius:2px;background:#059669"></div>RC 0 (success)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DATA TABLE below chart -->
+          <div style="height:140px;border-top:1px solid var(--border);overflow-y:auto">
+            <table class="results-table">
+              <thead><tr><th>run_date</th><th>job_name</th><th>step_name</th><th>total_cpu_s</th><th>est_cost</th><th>completion_code</th></tr></thead>
+              <tbody>
+                <tr><td>2026-09-24</td><td>PAYROLL01</td><td>STEP030</td><td style="color:#dc2626;font-weight:600">18,240</td><td style="color:#dc2626">$73.08</td><td style="color:#dc2626">S0C4</td></tr>
+                <tr><td>2026-09-24</td><td>PAYROLL02</td><td>STEP030</td><td style="color:#dc2626;font-weight:600">14,100</td><td style="color:#dc2626">$56.52</td><td style="color:#dc2626">S0C4</td></tr>
+                <tr><td>2026-09-23</td><td>PAYROLL01</td><td>STEP030</td><td>9,812</td><td>$39.25</td><td style="color:#059669">RC 0</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CHART BUILDER PANEL -->
+        <div class="chart-builder">
+          <div class="cb-head"><div class="cb-title">Chart options</div></div>
+
+          <div class="cb-section">
+            <div class="cb-label">Chart type</div>
+            <div class="cb-opts">
+              <button class="chart-opt" onclick="selectChart(this,'bar')">
+                <span class="chart-opt-icon">▬</span>Bar
+              </button>
+              <button class="chart-opt on" onclick="selectChart(this,'grouped-bar')">
+                <span class="chart-opt-icon">⊟</span>Grouped
+              </button>
+              <button class="chart-opt" onclick="selectChart(this,'line')">
+                <span class="chart-opt-icon">╱</span>Line
+              </button>
+              <button class="chart-opt" onclick="selectChart(this,'table')">
+                <span class="chart-opt-icon">☰</span>Table
+              </button>
+              <button class="chart-opt" onclick="selectChart(this,'scatter')">
+                <span class="chart-opt-icon">⁚</span>Scatter
+              </button>
+            </div>
+          </div>
+
+          <div class="cb-section">
+            <div class="cb-label">X axis</div>
+            <select class="axis-sel">
+              <option>run_date</option><option>job_name</option><option>step_name</option>
+              <option>total_cpu_s</option><option>est_cost</option>
+            </select>
+            <div class="cb-label">Y axis</div>
+            <select class="axis-sel">
+              <option>total_cpu_s</option><option>est_cost</option>
+              <option>run_date</option><option>job_name</option>
+            </select>
+            <div class="cb-label">Colour / group by</div>
+            <select class="axis-sel">
+              <option>completion_code</option><option>job_name</option>
+              <option>step_name</option><option>None</option>
+            </select>
+          </div>
+
+          <div class="cb-section">
+            <div class="cb-label">Report title</div>
+            <input class="form-input" value="PAYROLL CPU seconds by step — last 10 runs" style="margin-bottom:8px">
+            <div class="cb-label">Folder</div>
+            <select class="axis-sel">
+              <option>PAYROLL investigation</option>
+              <option>Q4 capacity review</option>
+              <option>My work (root)</option>
+              <option>+ New folder…</option>
+            </select>
+          </div>
+
+          <div style="padding:12px 14px">
+            <button class="btn btn-p" style="width:100%;justify-content:center" onclick="openModal('m-save-report')">
+              Save as Draft
+            </button>
+            <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:6px">Draft — only visible to you until published</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D6 — PUBLISH FLOW
+  Draft → Published. One-click with confirmation modal.
+  Clear explanation of what "published" means.
+  Can unpublish later.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d6">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><span class="cur">PAYROLL CPU share — weekly bar chart</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell">
+    <aside class="sidebar" id="sb-d6"></aside>
+    <main class="main">
+      <div style="padding:24px 28px;max-width:700px">
+        <div style="font-size:21px;font-weight:600;color:var(--text);margin-bottom:4px">Publish report</div>
+        <div style="font-size:13px;color:var(--text-sec);margin-bottom:20px">PAYROLL CPU share — weekly bar chart · currently Draft</div>
+
+        <!-- REPORT CARD PREVIEW -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:16px;margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:14px">◫</span>
+            <span style="font-size:14px;font-weight:600;color:var(--text)">PAYROLL CPU share — weekly bar chart</span>
+            <span class="badge draft" style="margin-left:auto">Draft</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-sec);margin-bottom:10px">PAYROLL investigation folder · created by Sarah Chen · 24 Sep 2026</div>
+          <svg width="100%" height="100" id="pub-preview"></svg>
+        </div>
+
+        <!-- WHAT PUBLISHING DOES -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:20px">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">What happens when you publish</div>
+          <div class="pub-impact-row"><span>👁</span><span>All 5 users in your organisation will be able to see this report</span></div>
+          <div class="pub-impact-row"><span>📌</span><span>It will appear in the Workspace under <strong>PAYROLL investigation</strong> with a Published badge</span></div>
+          <div class="pub-impact-row"><span>🔒</span><span>The underlying query (PAYROLL CPU by step) will be automatically protected to prevent breaking the report</span></div>
+          <div class="pub-impact-row"><span>↩</span><span>You can unpublish at any time — this reverts it to Draft and hides it from other users</span></div>
+        </div>
+
+        <!-- PUBLISHING OPTIONS -->
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-bottom:20px">
+          <div class="form-field">
+            <label class="form-label">Published title (confirm or edit)</label>
+            <input class="form-input" value="PAYROLL CPU share — weekly bar chart">
+          </div>
+          <div class="form-field" style="margin-bottom:0">
+            <label class="form-label">Description (optional — shown in workspace)</label>
+            <input class="form-input" placeholder="What does this report show? Who is it for?">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-g" onclick="go('d1')">← Back</button>
+          <button class="btn btn-p" style="padding:10px 24px" onclick="go('d1');toast('Report published — PAYROLL CPU share is now visible to all 5 users','ok')">
+            Publish report
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px">After publishing, click the report in Workspace to see it with the Published badge.</div>
+      </div>
+    </main>
+    <div class="right-rail"><div class="rrb">ℹ</div><div class="rrb">⧩</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D7 — IMPORT PACKAGE
+  Maintec delivers a .smfpkg at onboarding.
+  Drag-and-drop or browse. Shows what's in the package
+  before confirming import. Handles already-imported
+  and version conflict.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d7">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><span class="cur">Import package</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell">
+    <aside class="sidebar" id="sb-d7"></aside>
+    <main class="main">
+      <div style="padding:24px 28px;max-width:660px">
+        <div style="font-size:21px;font-weight:600;color:var(--text);margin-bottom:4px">Import package</div>
+        <div style="font-size:13px;color:var(--text-sec);margin-bottom:20px">Maintec delivers pre-built report packages as .smfpkg files. Import one to add its queries and reports to your workspace.</div>
+
+        <!-- ALREADY IMPORTED NOTICE -->
+        <div class="fb warn" style="margin-bottom:16px">
+          <div class="fb-icon">⚠</div>
+          <div class="fb-body">
+            <div class="fb-title">Maintec — Standard Reports v1.2 already imported</div>
+            <div class="fb-desc">The package below was imported on 1 Jan 2026. Importing a newer version will update existing items — any edits you've made to those items will be overwritten. Duplicate-protected items will be kept as-is.</div>
+          </div>
+        </div>
+
+        <!-- DROP ZONE -->
+        <div class="import-zone" id="drop-zone" onclick="simulateImport()">
+          <div style="font-size:28px;margin-bottom:10px;opacity:.3">📦</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Drop .smfpkg file here</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">or click to browse your files</div>
+          <button class="btn btn-s btn-sm" onclick="event.stopPropagation();simulateImport()">Browse files</button>
+        </div>
+
+        <!-- PACKAGE PREVIEW (after file selected) -->
+        <div id="pkg-preview" style="display:none">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:16px">
+            <div style="padding:12px 16px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;background:var(--bg)">
+              <span style="font-size:16px">📦</span>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Maintec — Standard Reports v1.4</div>
+                <div style="font-size:11px;color:var(--text-muted)">12 items · from Maintec Technologies · published 20 Sep 2026</div>
+              </div>
+              <span class="badge info" style="margin-left:auto">Newer than installed (v1.2)</span>
+            </div>
+            <div style="padding:0">
+              <div style="padding:8px 16px;font-size:11px;font-weight:600;color:var(--text-muted);background:var(--bg);border-bottom:1px solid var(--border-light)">12 ITEMS IN THIS PACKAGE</div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border-light);font-size:12px">
+                <span>◫</span><span style="flex:1;color:var(--text)">30-day CPU utilisation trend</span><span class="badge ok">Update</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border-light);font-size:12px">
+                <span>◫</span><span style="flex:1;color:var(--text)">LPAR capacity summary</span><span class="badge ok">Update</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border-light);font-size:12px">
+                <span>◫</span><span style="flex:1;color:var(--text)">DB2 buffer pool hit ratio — 30 days</span><span class="badge ok">Update</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid var(--border-light);font-size:12px">
+                <span>◫</span><span style="flex:1;color:var(--text)">PAYROLL abend trend — weekly</span><span class="badge info" style="background:var(--green-bg);color:var(--green);border-color:var(--green-border)">New</span>
+              </div>
+              <div style="padding:9px 16px;font-size:11px;color:var(--text-muted)">8 more items…</div>
+            </div>
+          </div>
+
+          <div class="fb info" style="margin-bottom:14px">
+            <div class="fb-icon">ℹ</div>
+            <div class="fb-body">
+              <div class="fb-desc">3 items will be updated. 1 item is new. Items you have modified that exist in this package will be overwritten. To keep your edits, duplicate the item first.</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-g" onclick="document.getElementById('pkg-preview').style.display='none'">← Cancel</button>
+            <button class="btn btn-p" onclick="startImport()">Import package</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="right-rail"><div class="rrb">ℹ</div><div class="rrb">⧩</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D8 — EMPTY STATE (first open, nothing imported yet)
+  Client opens workspace before importing Maintec's
+  package. Single action: import. Clear explanation
+  of what the workspace is for.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d8">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><span class="cur">Workspace</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell">
+    <aside class="sidebar" id="sb-d8"></aside>
+    <main class="main" style="display:flex;align-items:center;justify-content:center;padding:40px 24px">
+      <div style="text-align:center;max-width:500px">
+        <div style="font-size:36px;margin-bottom:16px;opacity:.2">⊡</div>
+        <div style="font-size:20px;font-weight:600;color:var(--text);margin-bottom:8px;letter-spacing:-.3px">Your workspace is empty</div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.7;margin-bottom:28px">The workspace is where you save queries, build reports, and organise your analysis work. Maintec has prepared a standard report package for you — import it to get started with pre-built reports for CPU, DB2, and job activity.</div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+          <button class="btn btn-p" style="padding:10px 28px;font-size:14px" onclick="go('d7')">
+            📦 Import Maintec standard reports
+          </button>
+          <span style="font-size:12px;color:var(--text-muted)">or</span>
+          <button class="btn btn-s" onclick="go('d2')">+ Write your own query</button>
+        </div>
+
+        <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:left">
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:5px;padding:13px">
+            <div style="font-size:16px;margin-bottom:6px">⌨</div>
+            <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px">Write queries</div>
+            <div style="font-size:11px;color:var(--text-muted);line-height:1.5">SQL against your SMF data with a schema browser showing all available tables and columns</div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:5px;padding:13px">
+            <div style="font-size:16px;margin-bottom:6px">◫</div>
+            <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px">Build reports</div>
+            <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Turn query results into charts. Publish them so your whole team can see them.</div>
+          </div>
+          <div style="background:var(--white);border:1px solid var(--border);border-radius:5px;padding:13px">
+            <div style="font-size:16px;margin-bottom:6px">📂</div>
+            <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:3px">Organise</div>
+            <div style="font-size:11px;color:var(--text-muted);line-height:1.5">Folders keep investigations, capacity reviews, and standard reports separate and findable.</div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div class="right-rail"><div class="rrb">ℹ</div><div class="rrb">⧩</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+  D9 — AI CREATE REPORT (V2 stub)
+  Honest about what's coming. Shows what the flow
+  will look like. Input field is disabled with a
+  clear V2 label. Not a fake demo.
+════════════════════════════════════════════════════ -->
+<div class="screen" id="d9">
+  <nav class="topnav">
+    <div class="tn-logo"><div class="tn-logomark">S</div></div>
+    <div class="tn-brand">SMF Analytics</div>
+    <div class="tn-bc"><a onclick="go('d1')">Workspace</a><span class="sep">›</span><span class="cur">AI — Create report</span></div>
+    <div class="tn-right"><div class="tn-btn"><div class="org-pill">🏢 Contoso Bank ⌄</div></div><div class="tn-btn">?</div></div>
+  </nav>
+  <div class="shell">
+    <aside class="sidebar" id="sb-d9"></aside>
+    <main class="main">
+      <div style="padding:24px 28px;max-width:640px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <div style="font-size:21px;font-weight:600;color:var(--text)">AI — Create report</div>
+          <span class="badge v2">V2 — Coming</span>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);margin-bottom:20px;line-height:1.6">Describe a report in plain English and the AI will write the SQL, run it, and create a Draft report you can review and publish. This feature requires the query builder to be fully live — it will be available in V2.</div>
+
+        <!-- PREVIEW OF WHAT THE FLOW WILL LOOK LIKE -->
+        <div style="background:var(--white);border:1px dashed #c4b5fd;border-radius:6px;padding:20px;margin-bottom:20px">
+          <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">How it will work</div>
+
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--purple-light);color:var(--purple);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px">You describe what you want</div>
+                <div style="font-size:12px;color:var(--text-sec);margin-bottom:6px">e.g. "Show me PAYROLL CPU usage by week for the last 3 months, compared to my 80% threshold"</div>
+                <div style="background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:8px 11px;font-size:13px;color:var(--text-muted);cursor:not-allowed;display:flex;align-items:center;gap:8px">
+                  <span style="flex:1">Describe the report you want…</span>
+                  <span class="badge v2" style="flex-shrink:0">V2</span>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--purple-light);color:var(--purple);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px">AI writes the SQL and shows it to you</div>
+                <div style="font-size:12px;color:var(--text-sec)">You can review and edit the generated query before it runs. The AI uses the same SMF table schema as the query builder.</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--purple-light);color:var(--purple);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px">Query runs — chart appears</div>
+                <div style="font-size:12px;color:var(--text-sec)">AI suggests a chart type based on the result shape. You adjust axes and title, then save as Draft or publish directly.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WHAT WORKS NOW -->
+        <div class="fb ok">
+          <div class="fb-icon">✓</div>
+          <div class="fb-body">
+            <div class="fb-title">What works now — AI assistant in reports</div>
+            <div class="fb-desc">The AI assistant (✦ button on any report page) can already answer questions about your data, explain findings, and run capacity analyses against your SMF data. V2 adds the ability to generate and save SQL queries from natural language directly in the workspace.</div>
+          </div>
+        </div>
+
+        <button class="btn btn-s" onclick="toast('You will be notified when AI report creation is available in V2','ok')">Notify me when V2 is ready</button>
+      </div>
+    </main>
+    <div class="right-rail"><div class="rrb">ℹ</div><div class="rrb">⧩</div></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="mbd" id="m-new-folder">
+  <div class="modal" style="width:380px">
+    <div class="m-head"><div><div class="m-title">New folder</div></div><button class="m-close" onclick="closeModal('m-new-folder')">✕</button></div>
+    <div class="m-body">
+      <div class="form-field">
+        <label class="form-label">Folder name</label>
+        <input class="form-input" placeholder="e.g. Q4 capacity review" autofocus>
+        <span class="form-helper">Folders can be nested one level deep inside another folder.</span>
+      </div>
+      <div class="form-field" style="margin-bottom:0">
+        <label class="form-label">Parent folder (optional)</label>
+        <select class="form-select"><option value="">None — top level</option><option>My work</option><option>PAYROLL investigation</option></select>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-g" onclick="closeModal('m-new-folder')">Cancel</button>
+      <button class="btn btn-p" onclick="closeModal('m-new-folder');toast('Folder created','ok')">Create folder</button>
+    </div>
+  </div>
+</div>
+
+<div class="mbd" id="m-import">
+  <div class="modal" style="width:400px">
+    <div class="m-head"><div><div class="m-title">Import package</div><div class="m-sub">Add Maintec-delivered queries and reports</div></div><button class="m-close" onclick="closeModal('m-import')">✕</button></div>
+    <div class="m-body">
+      <div class="import-zone" onclick="closeModal('m-import');go('d7')">
+        <div style="font-size:24px;margin-bottom:8px;opacity:.3">📦</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">Click to import a .smfpkg file</div>
+        <div style="font-size:12px;color:var(--text-muted)">Or drag and drop here</div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-g" onclick="closeModal('m-import')">Cancel</button>
+      <button class="btn btn-p" onclick="closeModal('m-import');go('d7')">Browse files</button>
+    </div>
+  </div>
+</div>
+
+<div class="mbd" id="m-save-report">
+  <div class="modal" style="width:420px">
+    <div class="m-head"><div><div class="m-title">Saved as Draft</div><div class="m-sub">Report created and added to your workspace</div></div><button class="m-close" onclick="closeModal('m-save-report')">✕</button></div>
+    <div class="m-body">
+      <div class="fb ok" style="margin-bottom:14px">
+        <div class="fb-icon">✓</div>
+        <div class="fb-body">
+          <div class="fb-title">PAYROLL CPU seconds by step — saved as Draft</div>
+          <div class="fb-desc">Added to PAYROLL investigation folder. Only you can see it until you publish it.</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-sec);line-height:1.6">The underlying query has been automatically protected so editing it won't break this report. You can unprotect it from the query settings if needed.</p>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-g" onclick="closeModal('m-save-report');go('d1')">Go to workspace</button>
+      <button class="btn btn-p" onclick="closeModal('m-save-report');go('d6')">Publish now →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const screens=['d1','d2','d3','d4','d5','d6','d7','d8','d9'];
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  const sc=document.getElementById(id); if(sc) sc.classList.add('on');
+  document.querySelectorAll('.pb').forEach((b,i)=>b.classList.toggle('on',screens[i]===id));
+  window.scrollTo(0,0);
+  // inject sidebars
+  ['d1','d2','d3','d4','d5','d6','d7','d8','d9'].forEach(sid=>{
+    const sb=document.getElementById('sb-'+sid);
+    if(sb) sb.innerHTML=`
+      <div class="sib" onclick="toast('B Series','info')">⊞</div>
+      <div class="sib" onclick="toast('B Series','info')">⚑</div>
+      <div class="sib" onclick="toast('B Series','info')">◫</div>
+      <div class="sib" onclick="toast('B Series','info')">◻</div>
+      <div class="sib" onclick="toast('B Series','info')">◈</div>
+      <div class="sib" style="font-size:13px" onclick="toast('C Series','info')">▣</div>
+      <div class="sib ${id===sid?'on':''}" title="Workspace" onclick="go('d1')">⊡</div>
+      <div class="sib" style="margin-top:auto">⚙</div>
+      <div class="sib">👤</div>`;
+  });
+  setTimeout(()=>{ renderCharts(id); }, 80);
+}
+
+function toggleSchema(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+  // find arrow
+  const par=el.previousElementSibling;
+  if(par){const arr=par.querySelector('.st-arrow');if(arr) arr.classList.toggle('open',el.classList.contains('open'));}
+}
+
+function insertCol(col){
+  const ta=document.getElementById('code-area');
+  if(!ta) return;
+  const pos=ta.selectionStart;
+  ta.value=ta.value.slice(0,pos)+col+ta.value.slice(pos);
+  ta.focus();
+  ta.selectionStart=ta.selectionEnd=pos+col.length;
+  toast('Inserted: '+col,'info');
+}
+
+function selectChart(btn, type){
+  btn.closest('.cb-opts').querySelectorAll('.chart-opt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  toast('Chart type: '+type,'info');
+  renderPreviewChart();
+}
+
+function openModal(id){ document.getElementById(id).classList.add('on'); }
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+document.addEventListener('click',e=>{ if(e.target.classList.contains('mbd')) e.target.classList.remove('on'); });
+
+function filterFolder(f){ toast('Filtering to: '+f,'info'); }
+
+function simulateImport(){
+  const dz=document.getElementById('drop-zone');
+  if(dz) dz.classList.add('drag');
+  setTimeout(()=>{
+    if(dz) dz.classList.remove('drag');
+    document.getElementById('pkg-preview').style.display='block';
+  },600);
+}
+
+function startImport(){
+  document.getElementById('pkg-preview').style.display='none';
+  go('d1');
+  toast('Package imported — 12 items added to Maintec — Standard Reports folder','ok');
+}
+
+function toast(msg,type='info'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  const i={ok:'✓',fail:'✗',info:'ℹ',warn:'⚠'};
+  t.innerHTML=`<span style="font-size:13px;flex-shrink:0">${i[type]||'ℹ'}</span><span style="flex:1">${msg}</span><span class="t-x" onclick="this.parentElement.remove()">✕</span>`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),4000);
+}
+
+/* CHARTS */
+function gw(id){ const e=document.getElementById(id); return e?(e.getBoundingClientRect().width||400):400; }
+
+function renderGroupedBar(id, h=200){
+  const el=document.getElementById(id); if(!el) return;
+  const W=gw(id), H=h;
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const p={t:12,r:12,b:28,l:48};
+  const runs=['15 Sep','16 Sep','17 Sep','18 Sep','19 Sep','20 Sep','21 Sep','22 Sep','23 Sep','24 Sep'];
+  const rc0=[9800,9720,9650,9580,9510,9450,9380,9300,9820,0];
+  const abend=[0,0,0,0,0,0,0,0,0,18240+14100];
+  const max=22000;
+  const n=runs.length;
+  const groupW=(W-p.l-p.r)/n;
+  const bw=groupW*0.35;
+  const sy=v=>p.t+(1-v/max)*(H-p.t-p.b);
+  let svg='';
+  [0,5000,10000,15000,20000].forEach(v=>{
+    const y=sy(v);
+    svg+=`<line x1="${p.l}" x2="${W-p.r}" y1="${y}" y2="${y}" stroke="#f0f2f5" stroke-width="1"/>`;
+    svg+=`<text x="${p.l-5}" y="${y+4}" text-anchor="end" fill="#94a3b8" font-size="10">${v>=1000?(v/1000)+'K':v}</text>`;
+  });
+  runs.forEach((r,i)=>{
+    const gx=p.l+i*groupW+groupW*0.15;
+    if(rc0[i]>0){ const bh=(rc0[i]/max)*(H-p.t-p.b); svg+=`<rect x="${gx}" y="${sy(rc0[i])}" width="${bw}" height="${bh}" rx="2" fill="#059669"/>`; }
+    if(abend[i]>0){ const bh=(abend[i]/max)*(H-p.t-p.b); svg+=`<rect x="${gx+bw+2}" y="${sy(abend[i])}" width="${bw}" height="${bh}" rx="2" fill="#dc2626"/>`; }
+    if(i%2===0||i===n-1) svg+=`<text x="${gx+bw}" y="${H-6}" text-anchor="middle" fill="#94a3b8" font-size="9">${r.slice(0,2)+' '+r.slice(3,6)}</text>`;
+  });
+  el.innerHTML=svg;
+}
+
+function renderPreviewChart(){ renderGroupedBar('report-preview-chart',200); }
+function renderPubPreview(){ renderGroupedBar('pub-preview',100); }
+
+function renderCharts(screen){
+  if(screen==='d5'){ renderGroupedBar('report-preview-chart',200); }
+  if(screen==='d6'){ renderGroupedBar('pub-preview',100); }
+}
+
+window.addEventListener('load',()=>{ go('d1'); });
+window.addEventListener('resize',()=>setTimeout(()=>renderCharts(screens.find((_,i)=>document.getElementById(screens[i])?.classList.contains('on'))||'d1'),100));
+</script>
+</body>
+</html>
